@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style type="text/css">
+        .infoBoxContent{font-size:12px;}
+        .infoBoxContent .title{background:url('img/1.png') no-repeat;height:42px;width:272px;}
+        .infoBoxContent .title strong{font-size:14px;line-height:42px;padding:0 10px 0 5px;}
+        .infoBoxContent .title .price{color:#FFFF00;}
+        .infoBoxContent .list{width:268px;border:solid 1px #4FA5FC;border-top:none;background:#fff;height:260px;}
+        .infoBoxContent .list ul{margin:0;padding:5px;list-style:none;}
+        .infoBoxContent .list ul li {float:left;width:255px;border-bottom:solid 1px #4FA5FC;padding:2px 0;}
+        .infoBoxContent .list ul .last{border:none;}
+        .infoBoxContent .list ul img{width:53px;height:42px;margin-right:5px;}
+        .infoBoxContent .list ul p{padding:0;margin:0;}
+        .infoBoxContent .left{float:left;}
+        .infoBoxContent .rmb{float:right;color:#EB6100;font-size:14px;font-weight:bold;}
+        .infoBoxContent a{color:#0041D9;text-decoration:none;}
+    </style>
+    <script type="text/javascript" src="js/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=ZldlC1Zzbm8mct3deeMDESu2"></script>
+    <!--<script src="http://api.map.baidu.com/api?v=1.2"></script>-->
+    <script type="text/javascript" src="js/InfoBox.js"></script>
+    <script type="text/javascript" src="js/TextIconOverlay.js"></script>
+    <title>海量点显示终端信息</title>
+</head>
+<body>
+<div id="map_canvas" style="width: 700px; height: 600px"></div>
+
+</body>
+
+</html>
+
+<script type="text/javascript">
+    //初始化地图对象
+    var map = new BMap.Map('map_canvas',{});
+
+    //初始化地图,设置中心点坐标和地图级别
+    map.centerAndZoom(new BMap.Point(105.000, 38.000), 5);//设置显示中国地图
+
+    //定位标记对象
+    var marker;
+
+    var data = {
+        "data":[
+            [104.438,39.006,"id123434"],
+            [94.932,40.382,"id1623434"],
+            [95.402,30.879,"id1423434"],
+            [113.847,23.011,"id1233434"],
+            [118.201,39.44,"id1234734"],
+            [95.718,39.828,"id1263434"],
+            [98.975,78.775,"id15234434"],
+            [89.085,78.567,"id125634"],
+            [99.67,97.764,"id1256434"]
+        ],"total":5365,"rt_loc_cnt":47764510,"errorno":0,"NearestTime":"2014-08-29 15:20:00","userTime":"2014-08-29 15:32:11"};
+
+    if (document.createElement('canvas').getContext) {  // 判断当前浏览器是否支持绘制海量点
+        var points = [];  // 添加海量点数据
+        for (var i = 0; i < data.data.length; i++) {
+            var point = new BMap.Point(data.data[i][0], data.data[i][1]);
+            //point.index=i;
+            //添加自定义属性存储该点对应的终端ID用于查询设备信息
+            point.tid=data.data[i][2];
+            points.push(point);
+            //sysout(data.data[i][2]);
+        }
+        //定义坐标点参数
+        var options = {
+            size: BMAP_POINT_SIZE_NORMAL,
+            shape: BMAP_POINT_SHAPE_STAR,
+            color: '#d340c3'
+        }
+        var pointCollection = new BMap.PointCollection(points, options);  // 初始化PointCollection
+
+        pointCollection.addEventListener('click', function (e) { // 监听点击事件
+            //sysout('单击点的坐标为：' + e.point.lng + ',' + e.point.lat);
+
+            marker = new BMap.Marker(e.point);
+
+            //打开固定样式的窗口
+            openInfoWindow(e,map);
+
+            //可修改样式的消息框
+            //openInfoBox(marker);
+
+            //开启窗口拖动
+            marker.enableDragging();
+        });
+        map.addOverlay(pointCollection);  // 将点添加到地图上
+    } else {
+        alert('本地图仅支持chrome、safari、IE8+以上浏览器');
+    }
+    
+    /**
+     * 无样式的简单窗口，可以发送短信
+     * @param e 点击事件对象
+     * @param map 地图对象
+     * */
+    function openInfoWindow(e,map){
+        var opts = {
+            width: 250, // 信息窗口宽度
+            height: 100, // 信息窗口高度
+            title:"<a target='_blank' href='http://www.baidu.com'>终端信息</a>", // 信息窗口标题
+            enableMessage: false,//设置允许信息窗发送短息
+        }
+        sysout(e);
+        var infowindow = new BMap.InfoWindow("终端ID:"+e.point.tid+"<br>名称:<a target='_blank' href='http://www.baidu.com'>可以加链接</a><br>击点的坐标为：" + e.point.lng + "," + e.point.lat, opts);
+        map.openInfoWindow(infowindow, e.point);
+
+        //ajax加载详情
+        //getTerminalInfo();
+    }
+
+    /**
+     * 可修改样式的消息框
+     * @param maker 定位标记对象
+     * */
+    function openInfoBox(marker){
+        //定义弹出窗口
+        var html = [
+            "<div class='infoBoxContent'><div class='title'><strong>XXX终端</strong></div>",
+            "<div class='list'><ul><li><div class='left'><img src='img/1.png'/></div><div class='left'><a target='_blank' href='http://map.baidu.com'>中海雅园南北通透四居室</a><p>4室2厅，205.00平米，3层</p></div><div class='rmb'>760万</div></li>"
+            ,"<li><div class='left'><img src='img/1.png'/></div><div class='left'><a target='_blank' href='http://map.baidu.com'>中海雅园四居室还带保姆间</a><p>2室1厅，112.00平米，16层</p></div><div class='rmb'>300万</div></li>"
+            ,"<li><div class='left'><img src='img/1.png'/></div><div class='left'><a target='_blank' href='http://map.baidu.com'>《有钥匙 随时看》花园水系</a><p>3室2厅，241.00平米，16层</p></div><div class='rmb'>400万</div></li>"
+            ,"<li><div class='left'><img src='img/1.png'/></div><div class='left'><a target='_blank' href='http://map.baidu.com'>富力城D区正规楼王大三居</a><p>3室3厅，241.00平米，17层</p></div><div class='rmb'>600万</div></li>"
+            ,"<li class='last'><div class='left'><img src='img/1.png'/></div><div class='left'><a target='_blank' href='http://map.baidu.com'>富力城豪，身份人士的象征</a><p>4室2厅，213.90平米，25层</p></div><div class='rmb'>700万</div></li>"
+            ,"</ul></div>"
+            ,"</div>"];
+        //窗口属性配置
+        var infoBox = new BMapLib.InfoBox(map,html.join(""),{
+            boxStyle:{
+                background:"pink",
+                width: "270px",
+                height: "300px"
+            },
+            closeIconMargin: "1px 1px 0 0",
+            enableAutoPan: true,
+            align: INFOBOX_AT_TOP
+        });
+
+        infoBox.open(marker);
+
+        //ajax加载详情
+        //getTerminalInfo();
+    }
+    /**
+    * dom ID选择器
+    * */
+    function $(id){
+        return document.getElementById(id);
+    }
+
+    /**
+    * 控制台输出
+    * */
+    function sysout(s){
+        console.log(s);
+    }
+
+    /**
+    * 根据终端id获取终端信息
+    * */
+    function getTerminalInfo(data){
+        $.getJSON("url",data,function(result){
+            return result;
+        });
+    }
+</script>
